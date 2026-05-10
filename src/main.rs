@@ -1,8 +1,11 @@
+mod background;
 use gpui::*;
 use gpui_component::{button::*, *};
 
 pub struct HelloWorld;
-
+use background::background::run_background;
+// 2. 全局上下文标识
+// 1. 定义 action 组
 impl Render for HelloWorld {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         div()
@@ -22,17 +25,17 @@ impl Render for HelloWorld {
 }
 
 fn main() {
+    run_background();
     let app = gpui_platform::application().with_assets(gpui_component_assets::Assets);
 
     app.run(move |cx| {
-        // This must be called before using any GPUI Component features.
         gpui_component::init(cx);
 
         cx.spawn(async move |cx| {
             cx.open_window(WindowOptions::default(), |window, cx| {
                 let view = cx.new(|_| HelloWorld);
-                // This first level on the window, should be a Root.
                 cx.new(|cx| Root::new(view, window, cx))
+                // cx.new(|_| KeyLogger)
             })
             .expect("Failed to open window");
         })
