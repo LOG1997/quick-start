@@ -18,8 +18,8 @@ pub struct FomrComponent {
 
 impl FomrComponent {
     pub fn new(_window: &mut Window, _cx: &mut Context<Self>) -> Self {
-        let name_field = _cx.new(|cx| InputComponent::new(_window, cx));
-        let value_field = _cx.new(|cx| InputComponent::new(_window, cx));
+        let name_field = _cx.new(|cx| InputComponent::new(_window, cx, "enter name"));
+        let value_field = _cx.new(|cx| InputComponent::new(_window, cx, "enter value"));
         let type_select_field = _cx.new(|cx| SelectComponent::new(_window, cx, vec!["app", "web"]));
         Self {
             name_field,

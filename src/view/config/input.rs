@@ -13,8 +13,8 @@ pub struct InputComponent {
 }
 
 impl InputComponent {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let input_state = cx.new(|cx| InputState::new(window, cx).placeholder("Enter your name"));
+    pub fn new(window: &mut Window, cx: &mut Context<Self>, placeholder: &str) -> Self {
+        let input_state = cx.new(|cx| InputState::new(window, cx).placeholder(placeholder));
         let _subscriptions = vec![cx.subscribe_in(&input_state, window, {
             let input_state = input_state.clone();
             move |this, _, ev: &InputEvent, _window, cx| match ev {
