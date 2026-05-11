@@ -7,7 +7,7 @@ use gpui_component::*;
 
 pub struct AppRoot;
 impl Render for AppRoot {
-    fn render(&mut self, window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let helloworld = div()
             .v_flex()
             .gap_2()

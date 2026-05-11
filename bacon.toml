@@ -1,0 +1,16 @@
+# 默认任务：启动开发服务
+default_job = "run"
+
+[jobs.run]
+# 编译并运行你的应用
+command = ["cargo", "run"]
+# 需要看到应用的输出（日志、print 等）
+need_stdout = true
+# 关键：文件变更时“杀死旧进程→重启”
+on_change_strategy = "kill_then_restart"
+# （可选）优雅终止后再杀
+kill = ["pkill", "-TERM", "-P"]
+# 监视目录：src 默认已包含，可加其他（如 templates/）
+watch = ["src/"]
+# 允许警告也运行
+allow_warnings = true

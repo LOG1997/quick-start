@@ -12,6 +12,7 @@ gpui-component = { git = "https://github.com/longbridge/gpui-component" }
 gpui-component-assets = { git = "https://github.com/longbridge/gpui-component" }
 anyhow = "1.0"
 unicode-segmentation = "1.13.2"
-tray-icon = "0.24.0"
 global-hotkey = "0.8.0"
-gtk = "0.18.2"
+smol = "2.0.2"
+sysinfo = "0.39.1"
+battery = "0.7.8"
