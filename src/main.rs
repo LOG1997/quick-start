@@ -26,7 +26,7 @@ fn main() {
                     window.set_window_title("123");
 
                     // 创建 AppRoot 视图
-                    let app_root = cx.new(|_| AppRoot);
+                    let app_root = cx.new(|cx| AppRoot::new(window, cx));
                     // 用 Root 包裹它
                     let root = cx.new(|cx| Root::new(app_root, window, cx));
                     root
