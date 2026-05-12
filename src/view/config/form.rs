@@ -1,5 +1,5 @@
-use std::process::Child;
-
+use crate::DB;
+use crate::background::create_db::Config;
 use crate::view::config::button::ButtonComponent;
 use crate::view::config::input::InputComponent;
 use crate::view::config::select::SelectComponent;
@@ -54,7 +54,17 @@ impl FomrComponent {
         let submit_button = Button::new("submit").label("submit").on_click(_cx.listener(
             |this, event, window, cx| {
                 // 这里可以调用 this 的方法
-                this.get_form_value(cx);
+                let all_value = this.get_form_value(cx);
+                println!("this is u:{:?}", all_value);
+                let db = DB.config_repo.find_all();
+                // DB.config_repo
+                //     .save(&Config {
+                //         id: 11,
+                //         name: all_value.name.to_string(),
+                //         value: all_value.value.to_string(),
+                //     })
+                //     .unwrap()
+                println!("db:{:?}", db);
             },
         ));
         // let submit_button = self.button.update(_cx, |_button, _| {
