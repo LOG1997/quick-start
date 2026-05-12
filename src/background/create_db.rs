@@ -1,12 +1,7 @@
 use crate::sqlite::db::{Entity, Repository};
 use anyhow::Result;
-use once_cell::sync::OnceCell;
-use rusqlite::Result as SqliteResult;
-use rusqlite::{Connection, params};
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-use serde_json;
-use std::sync::Arc;
-use std::sync::Mutex;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
@@ -34,4 +29,12 @@ impl AppDatabase {
             config_repo: Repository::<Config>::new(db_path)?,
         })
     }
+}
+
+lazy_static! {
+   pub static ref DB: AppDatabase = {
+        // 打开/创建数据库文件（app.db 会自动生成在项目根目录）
+        let repo=AppDatabase::new("app.db");
+        repo.unwrap()
+    };
 }
