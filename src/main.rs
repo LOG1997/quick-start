@@ -7,13 +7,29 @@ use gpui::*;
 use gpui_component::*;
 use view::view::AppRoot;
 
+// 1. 定义路由状态（全局单例）
+pub struct Router {
+    current_page: Page,
+    // 可选：历史栈
+}
+
+impl Global for Router {} // 假设 gpui_platform 中 Global trait 存在
+
+// 2. 页面枚举
+#[derive(Clone, PartialEq)]
+pub enum Page {
+    Config { id: Option<String> },
+    List,
+}
 fn main() {
     run_background();
     let app = gpui_platform::application().with_assets(gpui_component_assets::Assets);
-
     app.run(move |cx| {
         gpui_component::init(cx);
         let bounds = Bounds::centered(None, size(px(500.), px(500.0)), cx);
+        cx.set_global(Router {
+            current_page: Page::List,
+        });
         cx.spawn(async move |cx| {
             cx.open_window(
                 WindowOptions {

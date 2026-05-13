@@ -58,6 +58,8 @@ impl FomrComponent {
                         name: all_value.name.to_string(),
                         value: all_value.value.to_string(),
                         command_type: all_value.type_.to_string(),
+                        created_at: None,
+                        updated_at: None,
                     })
                     .unwrap()
             },

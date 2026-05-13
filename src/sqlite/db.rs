@@ -19,9 +19,27 @@ pub struct Config {
     pub value: String,
     pub name: String,
     pub command_type: String,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+}
+pub trait FromRow: Sized {
+    fn from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Self>;
 }
 
-impl<T: Entity> Repository<T> {
+impl FromRow for Config {
+    fn from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<Self> {
+        Ok(Config {
+            id: row.get("id")?,
+            value: row.get("value")?,
+            name: row.get("name")?,
+            command_type: row.get("command_type")?,
+            created_at: row.get("created_at")?,
+            updated_at: row.get("updated_at")?,
+        })
+    }
+}
+
+impl<T: FromRow + Entity> Repository<T> {
     /// 打开或创建数据库，并确保表存在
     pub fn new(db_name: &str) -> Result<Self> {
         let conn = Connection::open("db/".to_string() + db_name)?;
@@ -93,15 +111,13 @@ impl<T: Entity> Repository<T> {
 
     /// 查询所有实体
     pub fn find_all(&self) -> Result<Vec<T>> {
-        let sql = format!("SELECT data FROM {}", T::table_name());
+        let sql = format!("SELECT * FROM {}", T::table_name());
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(&sql)?;
-        let mut rows = stmt.query([])?;
+        let rows = stmt.query_map([], |row| T::from_row(row))?;
         let mut entities = Vec::new();
-        while let Some(row) = rows.next()? {
-            let data: String = row.get(0)?;
-            let entity = serde_json::from_str(&data)?; // anyhow::Error 可以承载 serde_json::Error
-            entities.push(entity);
+        for entity in rows {
+            entities.push(entity?);
         }
         Ok(entities)
     }
