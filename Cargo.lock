@@ -4670,6 +4670,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "battery",
+ "chrono",
  "global-hotkey",
  "gpui",
  "gpui-component",
@@ -4683,6 +4684,7 @@ dependencies = [
  "smol",
  "sysinfo 0.39.1",
  "unicode-segmentation",
+ "uuid",
 ]
 
 [[package]]

@@ -1,5 +1,4 @@
 use anyhow::Result;
-use rusqlite::Result as SqliteResult;
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -7,21 +6,33 @@ use std::sync::Mutex;
 /// 实体必须能提供表名和它的唯一 ID
 pub trait Entity: Serialize + for<'de> Deserialize<'de> + Clone + Send + 'static {
     fn table_name() -> &'static str;
-    fn id(&self) -> i64;
+    fn id(&self) -> &str;
 }
 pub struct Repository<T: Entity> {
     conn: Mutex<Connection>,
     _marker: std::marker::PhantomData<T>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Config {
+    pub id: String,
+    pub value: String,
+    pub name: String,
+    pub command_type: String,
+}
+
 impl<T: Entity> Repository<T> {
     /// 打开或创建数据库，并确保表存在
-    pub fn new(db_path: &str) -> Result<Self> {
-        let conn = Connection::open(db_path)?;
+    pub fn new(db_name: &str) -> Result<Self> {
+        let conn = Connection::open("db/".to_string() + db_name)?;
         let sql = format!(
             "CREATE TABLE IF NOT EXISTS {} (
-                id INTEGER PRIMARY KEY,
-                data TEXT NOT NULL
+                        id TEXT PRIMARY KEY,
+                        value TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        command_type TEXT NOT NULL,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT NOT NULL
             )",
             T::table_name()
         );
@@ -33,14 +44,35 @@ impl<T: Entity> Repository<T> {
     }
 
     /// 插入或替换（按 ID）
-    pub fn save(&self, entity: &T) -> Result<()> {
-        let data = serde_json::to_string(entity)?;
+    pub fn save_config(&self, entity: &Config) -> Result<()> {
+        let id = entity.id.as_str();
+        let value = entity.value.as_str();
+        let name = entity.name.as_str();
+        let command_type = entity.command_type.as_str();
+
+        // 当前时间戳（秒）
+        let now = chrono::Utc::now().to_string();
+
+        // created_at：如果实体已有则保留，否则用当前时间（新记录）
+        let created_at = chrono::Utc::now().to_string();
+        // updated_at：总是更新为当前时间
+        let updated_at = now;
         let sql = format!(
-            "INSERT OR REPLACE INTO {} (id, data) VALUES (?1, ?2)",
+            "INSERT INTO {} (id, value, name, command_type, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                 ON CONFLICT(id) DO UPDATE SET
+                     value = excluded.value,
+                     name = excluded.name,
+                     command_type = excluded.command_type,
+                     updated_at = excluded.updated_at",
             T::table_name()
         );
+
         let conn = self.conn.lock().unwrap();
-        conn.execute(&sql, params![entity.id(), data])?;
+        conn.execute(
+            &sql,
+            params![id, value, name, command_type, created_at, updated_at],
+        )?;
         Ok(())
     }
 

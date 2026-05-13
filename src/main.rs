@@ -1,25 +1,13 @@
 mod background;
 mod sqlite;
 mod view;
-use crate::background::create_db::AppDatabase;
 use background::background::run_background;
+use background::create_db::DB;
 use gpui::*;
 use gpui_component::*;
-// use lazy_static::lazy_static;
-use background::create_db::DB;
 use view::view::AppRoot;
 
-// lazy_static! {
-//     static ref DB: AppDatabase = {
-//         // 打开/创建数据库文件（app.db 会自动生成在项目根目录）
-//         let repo=AppDatabase::new("app.db");
-//         repo.unwrap()
-//     };
-// }
 fn main() {
-    unsafe {
-        std::env::set_var("GDK_BACKEND", "x11");
-    };
     run_background();
     let app = gpui_platform::application().with_assets(gpui_component_assets::Assets);
 

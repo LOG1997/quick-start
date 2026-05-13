@@ -1,6 +1,5 @@
 use crate::DB;
-use crate::background::create_db::Config;
-use crate::view::config::button::ButtonComponent;
+use crate::sqlite::db::Config;
 use crate::view::config::input::InputComponent;
 use crate::view::config::select::SelectComponent;
 use gpui::*;
@@ -12,12 +11,12 @@ use gpui_component::input::{Input, InputEvent, InputState};
 use gpui_component::select::{
     SearchableVec, Select, SelectDelegate, SelectEvent, SelectGroup, SelectItem, SelectState,
 };
+use uuid::Uuid;
 
 pub struct FomrComponent {
     pub name_field: Entity<InputComponent>,
     pub value_field: Entity<InputComponent>,
     pub type_select_field: Entity<SelectComponent>,
-    pub button: Entity<ButtonComponent>,
 }
 
 #[derive(Debug)]
@@ -32,22 +31,20 @@ impl FomrComponent {
         let name_field = _cx.new(|cx| InputComponent::new(_window, cx, "enter name"));
         let value_field = _cx.new(|cx| InputComponent::new(_window, cx, "enter value"));
         let type_select_field = _cx.new(|cx| SelectComponent::new(_window, cx, vec!["app", "web"]));
-        let submit_button = _cx.new(|_| ButtonComponent::new("Submit"));
         Self {
             name_field,
             value_field,
             type_select_field,
-            button: submit_button,
         }
     }
 
     pub fn render_form(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> Form {
-        let name_field = self.name_field.update(_cx, |field, _| {
-            Input::new(&field.input_state) // 正确传递两个参数
-        });
-        let value_field = self.value_field.update(_cx, |field, _| {
-            Input::new(&field.input_state) // 正确传递两个参数
-        });
+        let name_field = self
+            .name_field
+            .update(_cx, |field, _| Input::new(&field.input_state));
+        let value_field = self
+            .value_field
+            .update(_cx, |field, _| Input::new(&field.input_state));
         let type_select_field = self
             .type_select_field
             .update(_cx, |field, _| Select::new(&field.select_state));
@@ -55,26 +52,16 @@ impl FomrComponent {
             |this, event, window, cx| {
                 // 这里可以调用 this 的方法
                 let all_value = this.get_form_value(cx);
-                println!("this is u:{:?}", all_value);
-                let db = DB.config_repo.find_all();
-                // DB.config_repo
-                //     .save(&Config {
-                //         id: 11,
-                //         name: all_value.name.to_string(),
-                //         value: all_value.value.to_string(),
-                //     })
-                //     .unwrap()
-                println!("db:{:?}", db);
+                DB.config_repo
+                    .save_config(&Config {
+                        id: Uuid::new_v4().to_string(),
+                        name: all_value.name.to_string(),
+                        value: all_value.value.to_string(),
+                        command_type: all_value.type_.to_string(),
+                    })
+                    .unwrap()
             },
         ));
-        // let submit_button = self.button.update(_cx, |_button, _| {
-        //     Button::new("submit").label("submit").on_click(cx.listener(
-        //         |this, event, window, cx1| {
-        //             // 这里可以调用 this 的方法
-        //             this.button.;
-        //         },
-        //     ))
-        // });
         let form_block = v_form()
             .child(field().label("Name").child(name_field))
             .child(field().label("Value").child(value_field))
