@@ -2,13 +2,9 @@ use crate::DB;
 use crate::sqlite::db::Config;
 use crate::{Page, Router};
 use gpui::*;
-use gpui::{actions, prelude::FluentBuilder as _, *};
-use gpui_component::ThemeMode;
 use gpui_component::button::{Button, ButtonGroup, ButtonVariants};
 use gpui_component::{
-    ActiveTheme, Icon, IconName, Root, Sizable, Theme, TitleBar,
-    chart::AreaChart,
-    h_flex,
+    ActiveTheme, Sizable,
     progress::Progress,
     tab::{Tab, TabBar},
     table::{Column, ColumnSort, DataTable, TableDelegate, TableState},
@@ -51,7 +47,6 @@ impl TableDelegate for ConfigTableDelegate {
     fn column(&self, col_ix: usize, _cx: &App) -> Column {
         self.columns[col_ix].clone()
     }
-
     fn render_td(
         &mut self,
         row_ix: usize,
@@ -85,8 +80,8 @@ impl TableDelegate for ConfigTableDelegate {
                     .link()
                     .text_color(cx.theme().red)
                     .label("删除")
-                    .on_click(move |_, _, _| {
-                        println!("this is delete {:?}", config_data_delete);
+                    .on_click(move |_, _, cx| {
+                        DB.config_repo.delete(config_data_delete.id.clone());
                     }),
             );
         match col_ix {

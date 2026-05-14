@@ -2,15 +2,13 @@ use crate::DB;
 use crate::sqlite::db::Config;
 use crate::view::config::input::InputComponent;
 use crate::view::config::select::SelectComponent;
+use crate::{Page, Router};
 use gpui::*;
-use gpui::{Context, IntoElement, Render, Window, div};
-use gpui_component::button::Button;
-use gpui_component::button::ButtonVariants;
-use gpui_component::form::{Field, Form, field, h_form, v_form};
-use gpui_component::input::{Input, InputEvent, InputState};
-use gpui_component::select::{
-    SearchableVec, Select, SelectDelegate, SelectEvent, SelectGroup, SelectItem, SelectState,
-};
+use gpui::{Context, Window};
+use gpui_component::button::{Button, ButtonGroup, ButtonVariants};
+use gpui_component::form::{Form, field, v_form};
+use gpui_component::input::{Input, InputState};
+use gpui_component::select::Select;
 use uuid::Uuid;
 
 pub struct FomrComponent {
@@ -27,7 +25,13 @@ pub struct FormValue {
 }
 
 impl FomrComponent {
-    pub fn new(_window: &mut Window, _cx: &mut Context<Self>) -> Self {
+    pub fn new(_window: &mut Window, _cx: &mut Context<Self>, value_id: Option<String>) -> Self {
+        println!("is new");
+        if let Some(id) = value_id {
+            let _initial_data = DB.config_repo.find_by_id(id);
+            println!("ini data:P{:?}", _initial_data);
+        }
+
         let name_field = _cx.new(|cx| InputComponent::new(_window, cx, "enter name"));
         let value_field = _cx.new(|cx| InputComponent::new(_window, cx, "enter value"));
         let type_select_field = _cx.new(|cx| SelectComponent::new(_window, cx, vec!["app", "web"]));
@@ -39,36 +43,57 @@ impl FomrComponent {
     }
 
     pub fn render_form(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> Form {
-        let name_field = self
-            .name_field
-            .update(_cx, |field, _| Input::new(&field.input_state));
+        println!("two new");
+        let name_field = self.name_field.update(_cx, |field, field_cx| {
+            Input::new({
+                field.set_value(SharedString::new("1233333"), _window, field_cx);
+                &field.input_state
+            })
+        });
         let value_field = self
             .value_field
             .update(_cx, |field, _| Input::new(&field.input_state));
         let type_select_field = self
             .type_select_field
             .update(_cx, |field, _| Select::new(&field.select_state));
-        let submit_button = Button::new("submit").label("submit").on_click(_cx.listener(
-            |this, event, window, cx| {
-                // 这里可以调用 this 的方法
-                let all_value = this.get_form_value(cx);
-                DB.config_repo
-                    .save_config(&Config {
-                        id: Uuid::new_v4().to_string(),
-                        name: all_value.name.to_string(),
-                        value: all_value.value.to_string(),
-                        command_type: all_value.type_.to_string(),
-                        created_at: None,
-                        updated_at: None,
-                    })
-                    .unwrap()
-            },
-        ));
+        let operate_button = ButtonGroup::new("form_operate")
+            .flex()
+            .justify_center()
+            .gap_2()
+            .child(
+                Button::new("cancel")
+                    .label("取消")
+                    .on_click(move |_, _, cx| {
+                        cx.update_global::<Router, _>(|router, _| {
+                            router.current_page = Page::List;
+                        });
+                    }),
+            )
+            .child(
+                Button::new("submit")
+                    .label("提交")
+                    .primary()
+                    .on_click(_cx.listener(|this, _, _, cx| {
+                        // 这里可以调用 this 的方法
+                        let all_value = this.get_form_value(cx);
+                        DB.config_repo
+                            .save_config(&Config {
+                                id: Uuid::new_v4().to_string(),
+                                name: all_value.name.to_string(),
+                                value: all_value.value.to_string(),
+                                command_type: all_value.type_.to_string(),
+                                created_at: None,
+                                updated_at: None,
+                            })
+                            .unwrap()
+                    })),
+            );
+
         let form_block = v_form()
             .child(field().label("Name").child(name_field))
             .child(field().label("Value").child(value_field))
             .child(field().label("Type").child(type_select_field))
-            .child(field().child(submit_button));
+            .child(field().flex().justify_center().child(operate_button));
         form_block
     }
 
@@ -93,5 +118,15 @@ impl FomrComponent {
         };
         println!("result:{:?}", result);
         result
+    }
+
+    pub fn clear_form(&mut self, _cx: &mut Context<Self>) {
+        self.name_field
+            .update(_cx, |field, _| field.value = SharedString::default());
+        self.value_field
+            .update(_cx, |field, _| field.value = SharedString::default());
+        self.type_select_field
+            .update(_cx, |field, _| field.value = SharedString::default());
+        _cx.notify();
     }
 }

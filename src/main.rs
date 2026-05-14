@@ -14,7 +14,7 @@ pub struct Router {
 }
 
 impl Global for Router {} // 假设 gpui_platform 中 Global trait 存在
-
+impl Global for AppRoot {}
 // 2. 页面枚举
 #[derive(Clone, PartialEq)]
 pub enum Page {

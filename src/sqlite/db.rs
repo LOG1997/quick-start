@@ -95,14 +95,14 @@ impl<T: FromRow + Entity> Repository<T> {
     }
 
     /// 根据 ID 查询
-    pub fn find_by_id(&self, id: i64) -> Result<Option<T>> {
-        let sql = format!("SELECT data FROM {} WHERE id = ?1", T::table_name());
+    pub fn find_by_id(&self, id: String) -> Result<Option<T>> {
+        let sql = format!("SELECT * FROM {} WHERE id = ?1", T::table_name());
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(&sql)?;
         let mut rows = stmt.query(params![id])?;
+
         if let Some(row) = rows.next()? {
-            let data: String = row.get(0)?;
-            let entity = serde_json::from_str(&data)?;
+            let entity = T::from_row(&row)?;
             Ok(Some(entity))
         } else {
             Ok(None)
@@ -123,7 +123,7 @@ impl<T: FromRow + Entity> Repository<T> {
     }
 
     /// 删除指定 ID
-    pub fn delete(&self, id: i64) -> Result<bool> {
+    pub fn delete(&self, id: String) -> Result<bool> {
         let sql = format!("DELETE FROM {} WHERE id = ?1", T::table_name());
         let conn = self.conn.lock().unwrap();
         let affected = conn.execute(&sql, params![id])?;
