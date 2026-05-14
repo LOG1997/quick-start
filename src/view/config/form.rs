@@ -42,11 +42,20 @@ impl FomrComponent {
         }
     }
 
-    pub fn render_form(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> Form {
+    pub fn render_form(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+        form_value: Option<Config>,
+    ) -> Form {
         println!("two new");
         let name_field = self.name_field.update(_cx, |field, field_cx| {
             Input::new({
-                field.set_value(SharedString::new("1233333"), _window, field_cx);
+                field.set_value(
+                    SharedString::new(form_value.unwrap().name),
+                    _window,
+                    field_cx,
+                );
                 &field.input_state
             })
         });

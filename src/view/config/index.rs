@@ -20,8 +20,9 @@ impl ConfigView {
     }
 
     pub fn render_config(&mut self, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
+        let chuandi_value = self.form_value.clone();
         let form_wrapper = self.form.update(cx, |form_com, form_cx| {
-            form_com.render_form(window, form_cx)
+            form_com.render_form(window, form_cx, chuandi_value)
         });
         div().size_full().child(form_wrapper).into_any_element()
     }
