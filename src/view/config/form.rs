@@ -33,10 +33,19 @@ impl FomrComponent {
             println!("ini data:P{:?}", _initial_data);
         }
 
-        let name_field = _cx.new(|cx| InputComponent::new(_window, cx, "enter name"));
-        let value_field = _cx.new(|cx| InputComponent::new(_window, cx, "enter value"));
+        let name_field = _cx.new(|cx| {
+            InputComponent::new()
+                .placeholder("emter name")
+                .validate(|s, _| !s.is_empty())
+                .build(_window, cx)
+        });
+        let value_field = _cx.new(|cx| {
+            InputComponent::new()
+                .placeholder("enter value")
+                .build(_window, cx)
+        });
         let type_select_field = _cx.new(|cx| SelectComponent::new(_window, cx, vec!["app", "web"]));
-        let mut form_value = None;
+        let form_value = None;
         Self {
             name_field,
             value_field,
