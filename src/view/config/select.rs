@@ -1,6 +1,7 @@
 use crate::view::components::form::FormComponen;
 use gpui::*;
 use gpui::{Context, IntoElement, Render, Window, div};
+use gpui_component::IndexPath;
 use gpui_component::button::Button;
 use gpui_component::button::ButtonVariants;
 use gpui_component::form::{Field, Form, field, h_form, v_form};
@@ -38,5 +39,13 @@ impl SelectComponent {
             value: SharedString::default(),
             _subscriptions,
         }
+    }
+    pub fn set_value(&mut self, value: SharedString, window: &mut Window, cx: &mut Context<Self>) {
+        println!("设置值");
+        self.value = value.clone();
+        self.select_state.update(cx, move |state, _cx| {
+            state.set_selected_index(Some(IndexPath::new(1)), window, _cx)
+        });
+        cx.notify();
     }
 }

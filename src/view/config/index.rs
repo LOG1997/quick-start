@@ -20,22 +20,27 @@ impl ConfigView {
     }
 
     pub fn render_config(&mut self, window: &mut Window, cx: &mut Context<Self>) -> AnyElement {
-        let chuandi_value = self.form_value.clone();
         let form_wrapper = self.form.update(cx, |form_com, form_cx| {
-            form_com.render_form(window, form_cx, chuandi_value)
+            form_com.render_form(window, form_cx)
         });
         div().size_full().child(form_wrapper).into_any_element()
     }
-    pub fn init_for_id(&mut self, id: Option<String>, cx: &mut Context<Self>) {
+    pub fn init_for_id(&mut self, id: Option<String>, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(id) = id {
             // 查询数据（只执行一次）
             let data = DB.config_repo.find_by_id(id.to_string());
             println!("data:{:?}", data);
             self.form_value = data.unwrap();
+            self.form.update(cx, |form_com, form_cx| {
+                form_com.set_form_value(self.form_value.clone(), window, form_cx)
+            });
             cx.notify(); // 通知视图刷新
         } else {
             // 新建模式，清空表单
-            // self.clear_form(cx);
+            println!("没有id");
+            self.form.update(cx, |form_com, form_cx| {
+                form_com.clear_form(window, form_cx);
+            });
             cx.notify();
         }
     }

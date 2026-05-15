@@ -30,7 +30,7 @@ impl AppRoot {
                 // 进入 Config 页面，执行一次初始化（如加载数据）
                 let id_owned = id.clone();
                 self.form.update(cx, move |form, form_cx| {
-                    form.init_for_id(id_owned, form_cx); // 加载数据并更新表单
+                    form.init_for_id(id_owned, _window, form_cx); // 加载数据并更新表单
                 });
             }
             Page::List => {

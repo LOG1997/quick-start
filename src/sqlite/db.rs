@@ -13,7 +13,7 @@ pub struct Repository<T: Entity> {
     _marker: std::marker::PhantomData<T>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct Config {
     pub id: String,
     pub value: String,
