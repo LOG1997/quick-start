@@ -20,7 +20,6 @@ impl InputComponent {
             move |this, _, ev: &InputEvent, _window, cx| match ev {
                 InputEvent::Change => {
                     let value = input_state.read(cx).value();
-                    println!("value is {}", value);
                     this.value = value;
                     cx.notify()
                 }
@@ -36,7 +35,6 @@ impl InputComponent {
     }
 
     pub fn set_value(&mut self, value: SharedString, window: &mut Window, cx: &mut Context<Self>) {
-        println!("设置值");
         self.value = value.clone();
         self.input_state
             .update(cx, move |state, _cx| state.set_value(value, window, _cx));
