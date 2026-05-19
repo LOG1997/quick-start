@@ -2,7 +2,9 @@ use crate::DB;
 use crate::sqlite::db::Config;
 use crate::{Page, Router};
 use gpui::*;
+use gpui_component::WindowExt;
 use gpui_component::button::{Button, ButtonGroup, ButtonVariants};
+use gpui_component::notification::NotificationType;
 use gpui_component::{
     ActiveTheme, Sizable,
     progress::Progress,
@@ -23,6 +25,7 @@ impl ConfigTableDelegate {
             columns: vec![
                 Column::new("name", "Name").width(70.),
                 Column::new("value", "Value").width(120.),
+                Column::new("tab", "Tab").width(80.),
                 Column::new("command_type", "Type").width(80.),
                 Column::new("operate", "Operate").width(80.),
             ],
@@ -80,8 +83,12 @@ impl TableDelegate for ConfigTableDelegate {
                     .link()
                     .text_color(cx.theme().red)
                     .label("删除")
-                    .on_click(move |_, _, cx| {
-                        DB.config_repo.delete(config_data_delete.id.clone());
+                    .on_click(move |_, _window, cx| {
+                        let delete_res = DB.config_repo.delete(config_data_delete.id.clone());
+                        if delete_res.is_ok() {
+                            _window
+                                .push_notification((NotificationType::Success, "删除成功！"), cx);
+                        }
                     }),
             );
         match col_ix {
@@ -92,9 +99,12 @@ impl TableDelegate for ConfigTableDelegate {
                 .child(format!("{}", config_data.value))
                 .into_any_element(),
             2 => div()
+                .child(format!("{}", config_data.tab))
+                .into_any_element(),
+            3 => div()
                 .child(format!("{}", config_data.command_type))
                 .into_any_element(),
-            3 => div().child(div().child(operate_button)).into_any_element(),
+            4 => div().child(div().child(operate_button)).into_any_element(),
             _ => div().into_any_element(),
         }
     }

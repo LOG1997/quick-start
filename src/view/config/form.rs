@@ -5,15 +5,20 @@ use crate::view::config::select::SelectComponent;
 use crate::{Page, Router};
 use gpui::*;
 use gpui::{Context, Window};
+use gpui_component::WindowExt;
 use gpui_component::button::{Button, ButtonGroup, ButtonVariants};
 use gpui_component::form::{Form, field, v_form};
+use gpui_component::h_flex;
 use gpui_component::input::{Input, InputState};
+use gpui_component::notification::NotificationType;
 use gpui_component::select::Select;
+use gpui_component::{ActiveTheme, Icon, IconName};
 use uuid::Uuid;
 
 pub struct FomrComponent {
     pub name_field: Entity<InputComponent>,
     pub value_field: Entity<InputComponent>,
+    pub tab_field: Entity<InputComponent>,
     pub type_select_field: Entity<SelectComponent>,
     pub form_value: Option<Config>,
 }
@@ -22,12 +27,12 @@ pub struct FomrComponent {
 pub struct FormValue {
     pub name: SharedString,
     pub value: SharedString,
+    pub tab: SharedString,
     pub type_: SharedString,
 }
 
 impl FomrComponent {
     pub fn new(_window: &mut Window, _cx: &mut Context<Self>, value_id: Option<String>) -> Self {
-        println!("is new");
         if let Some(id) = value_id {
             let _initial_data = DB.config_repo.find_by_id(id);
             println!("ini data:P{:?}", _initial_data);
@@ -44,23 +49,31 @@ impl FomrComponent {
                 .placeholder("enter value")
                 .build(_window, cx)
         });
+        let tab_field = _cx.new(|cx| {
+            InputComponent::new()
+                .placeholder("enter tab")
+                .build(_window, cx)
+        });
         let type_select_field = _cx.new(|cx| SelectComponent::new(_window, cx, vec!["app", "web"]));
         let form_value = None;
         Self {
             name_field,
             value_field,
+            tab_field,
             type_select_field,
             form_value,
         }
     }
 
     pub fn render_form(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> Form {
-        println!("two new");
         let name_field = self
             .name_field
             .update(_cx, |field, field_cx| Input::new(&field.input_state));
         let value_field = self
             .value_field
+            .update(_cx, |field, _| Input::new(&field.input_state));
+        let tab_field = self
+            .tab_field
             .update(_cx, |field, _| Input::new(&field.input_state));
         let type_select_field = self
             .type_select_field
@@ -90,16 +103,36 @@ impl FomrComponent {
                             .as_ref()
                             .map(|s| s.id.to_string())
                             .unwrap_or(Uuid::new_v4().to_string());
-                        DB.config_repo
-                            .save_config(&Config {
-                                id,
-                                name: all_value.name.to_string(),
-                                value: all_value.value.to_string(),
-                                command_type: all_value.type_.to_string(),
-                                created_at: None,
-                                updated_at: None,
-                            })
-                            .unwrap();
+                        if all_value.name.is_empty()
+                            || all_value.value.is_empty()
+                            || all_value.type_.is_empty()
+                        {
+                            window.open_dialog(cx, |dialog, _, dialog_cx| {
+                                dialog.child(
+                                    h_flex()
+                                        .gap_3()
+                                        .child(
+                                            Icon::new(IconName::TriangleAlert)
+                                                .size_6()
+                                                .text_color(dialog_cx.theme().warning),
+                                        )
+                                        .child("值不能为空"),
+                                )
+                            });
+                            return;
+                        }
+                        let save_res = DB.config_repo.save_config(&Config {
+                            id,
+                            name: all_value.name.to_string(),
+                            value: all_value.value.to_string(),
+                            tab: all_value.tab.to_string(),
+                            command_type: all_value.type_.to_string(),
+                            created_at: None,
+                            updated_at: None,
+                        });
+                        if save_res.is_ok() {
+                            window.push_notification((NotificationType::Success, "保存成功！"), cx);
+                        }
                         this.clear_form(window, cx);
                         cx.update_global::<Router, _>(|router, _| router.current_page = Page::List);
                     })),
@@ -108,6 +141,7 @@ impl FomrComponent {
         let form_block = v_form()
             .child(field().required(true).label("Name").child(name_field))
             .child(field().required(true).label("Value").child(value_field))
+            .child(field().required(true).label("Tab").child(tab_field))
             .child(
                 field()
                     .required(true)
@@ -125,7 +159,9 @@ impl FomrComponent {
     pub fn get_value(&self, _cx: &mut Context<Self>) -> SharedString {
         self.value_field.update(_cx, |field, _| field.value.clone())
     }
-
+    pub fn get_tab(&self, _cx: &mut Context<Self>) -> SharedString {
+        self.tab_field.update(_cx, |field, _| field.value.clone())
+    }
     pub fn get_type(&self, _cx: &mut Context<Self>) -> SharedString {
         self.type_select_field
             .update(_cx, |field, _| field.value.clone())
@@ -135,6 +171,7 @@ impl FomrComponent {
         let result = FormValue {
             name: self.get_name(_cx),
             value: self.get_value(_cx),
+            tab: self.get_tab(_cx),
             type_: self.get_type(_cx),
         };
         println!("result:{:?}", result);
@@ -163,12 +200,16 @@ impl FomrComponent {
         self.form_value = form_value.clone();
         let name_value = SharedString::new(&form_value.clone().unwrap_or_default().name);
         let value_value = SharedString::new(&form_value.clone().unwrap_or_default().value);
+        let tab_value = SharedString::new(&form_value.clone().unwrap_or_default().tab);
         let type_value = SharedString::new(&form_value.clone().unwrap_or_default().command_type);
         self.name_field.update(_cx, |field, field_cx| {
             field.set_value(name_value, _window, field_cx)
         });
         self.value_field.update(_cx, |field, field_cx| {
             field.set_value(value_value, _window, field_cx)
+        });
+        self.tab_field.update(_cx, |field, field_cx| {
+            field.set_value(tab_value, _window, field_cx)
         });
         self.type_select_field.update(_cx, |field, field_cx| {
             field.set_value(type_value, _window, field_cx)

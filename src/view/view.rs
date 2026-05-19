@@ -2,6 +2,7 @@ use crate::view::components::header::app_header;
 use crate::view::config::index::ConfigView;
 use crate::view::list::index::TableView;
 use crate::{Page, Router};
+use gpui::http_client::http::header::CONTENT_SECURITY_POLICY_REPORT_ONLY;
 use gpui::*;
 use gpui::{Context, IntoElement, Render, Window, div};
 use gpui_component::*;
@@ -40,29 +41,37 @@ impl AppRoot {
     }
 }
 impl Render for AppRoot {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        let router = _cx.global::<Router>();
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let dialog_layer = Root::render_dialog_layer(window, cx);
+        let notification_layer = Root::render_notification_layer(window, cx);
+        let router = cx.global::<Router>();
         let new_page = router.current_page.clone();
         let current_page = router.current_page.clone();
 
         if Some(&new_page) != self.current_route.as_ref() {
             // 路由变化，执行进入页面的初始化
             println!("路由变化");
-            self.on_route_change(&new_page, _window, _cx);
+            self.on_route_change(&new_page, window, cx);
             self.current_route = Some(new_page.clone());
         }
         let view = match &current_page {
             Page::List => self
                 .table
-                .update(_cx, move |table, cx| table.render_list(_window, cx))
+                .update(cx, move |list, list_cx| list.render_list(window, list_cx))
                 .into_any_element(),
             Page::Config { id } => {
                 // 进入 Config 页面，执行一次初始化（如加载数据）
-
-                self.form
-                    .update(_cx, |form_ex, cx| form_ex.render_config(_window, cx))
+                self.form.update(cx, |form_config, config_cx| {
+                    form_config.render_config(window, config_cx)
+                })
             }
         };
-        div().size_full().v_flex().child(app_header()).child(view)
+        div()
+            .size_full()
+            .v_flex()
+            .child(app_header())
+            .child(view)
+            .children(dialog_layer)
+            .children(notification_layer)
     }
 }

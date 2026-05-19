@@ -18,6 +18,7 @@ pub struct Config {
     pub id: String,
     pub value: String,
     pub name: String,
+    pub tab: String,
     pub command_type: String,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
@@ -32,6 +33,7 @@ impl FromRow for Config {
             id: row.get("id")?,
             value: row.get("value")?,
             name: row.get("name")?,
+            tab: row.get("tab")?,
             command_type: row.get("command_type")?,
             created_at: row.get("created_at")?,
             updated_at: row.get("updated_at")?,
@@ -48,6 +50,7 @@ impl<T: FromRow + Entity> Repository<T> {
                         id TEXT PRIMARY KEY,
                         value TEXT NOT NULL,
                         name TEXT NOT NULL,
+                        tab TEXT NOT NULL,
                         command_type TEXT NOT NULL,
                         created_at TEXT NOT NULL,
                         updated_at TEXT NOT NULL
@@ -66,6 +69,7 @@ impl<T: FromRow + Entity> Repository<T> {
         let id = entity.id.as_str();
         let value = entity.value.as_str();
         let name = entity.name.as_str();
+        let tab = entity.tab.as_str();
         let command_type = entity.command_type.as_str();
 
         // 当前时间戳（秒）
@@ -76,12 +80,13 @@ impl<T: FromRow + Entity> Repository<T> {
         // updated_at：总是更新为当前时间
         let updated_at = now;
         let sql = format!(
-            "INSERT INTO {} (id, value, name, command_type, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+            "INSERT INTO {} (id, value, name, tab, command_type, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
                  ON CONFLICT(id) DO UPDATE SET
                      value = excluded.value,
                      name = excluded.name,
                      command_type = excluded.command_type,
+                     tab = excluded.tab,
                      updated_at = excluded.updated_at",
             T::table_name()
         );
@@ -89,7 +94,7 @@ impl<T: FromRow + Entity> Repository<T> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
             &sql,
-            params![id, value, name, command_type, created_at, updated_at],
+            params![id, value, name, tab, command_type, created_at, updated_at],
         )?;
         Ok(())
     }
